@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>한영외고 2025 버스 도착시간 계산기</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 15px;
+      background-color: #f8f9fa;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      background: linear-gradient(145deg, #7184ab, #8295bc);
+      padding: 25px 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(113, 132, 171, 0.2);
+    }
+
+    h2 {
+      color: white;
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 1.8rem;
+    }
+
+    h2::before {
+      content: "🚌";
+      margin-right: 8px;
+      font-size: 2rem;
+    }
+
+    select,
+    input[type="text"],
+    button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      font-size: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      transition: all 0.3s ease;
+    }
+
+    select:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.5);
+      background: white;
+    }
+
+    button {
+      background: #5a6d94;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background: #4a5d84;
+    }
+
+    label {
+      display: block;
+      color: white;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      font-size: 18px;
+      color: #2c3e50;
+      text-align: center;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      
+      .container {
+        padding: 20px 15px;
+      }
+
+      h2 {
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>버스 호 및 정류장 선택</h2>
+
+    <!-- 1. 호 선택 -->
+    <label for="busSelect">호수 선택 (1 ~ 9):</label>
+    <select id="busSelect">
+      <option value="">호를 선택하세요</option>
+      <!-- 1부터 9까지 옵션 -->
+      <option value="1">1호</option>
+      <option value="2">2호</option>
+      <option value="3">3호</option>
+      <option value="4">4호</option>
+      <option value="5">5호</option>
+      <option value="6">6호</option>
+      <option value="7">7호</option>
+      <option value="8">8호</option>
+      <option value="9">9호</option>
+    </select>
+
+    <!-- 2. 정류장 선택 -->
+    <label for="stationSelect">정류장 선택:</label>
+    <select id="stationSelect">
+      <option value="">호를 먼저 선택하세요</option>
+    </select>
+
+    <!-- 3. 출발 시간 입력 -->
+    <label for="departure">출발 시간 (예 3:45):</label>
+    <input type="text" id="departure" placeholder="시:분 형식으로 입력하세요">
+
+    <!-- 4. 계산 버튼 -->
+    <button id="calcBtn">도착 시간 계산</button>
+
+    <!-- 5. 결과 표시 -->
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    // 각 호별 정류장 및 각 정류장마다 offset(분) 예시 데이터
+    const stationData = {
+      "1": [
+        {name: "동자초 (건너편)", offset: 40},
+        {name: "동서울호텔", offset: 35},
+        {name: "프라임A", offset: 32},
+        {name: "광남초 (정문 앞)", offset: 30},
+        {name: "극동A", offset: 27},
+        {name: "강동성심병원", offset: 17}
+      ],
+      "2": [
+        {name: "석탑A", offset: 51},
+        {name: "강남구청 (롯데아파트 101동 앞)", offset: 50},
+        {name: "삼성중앙역 (힐스테이트 211동 앞)", offset: 47},
+        {name: "갤러리아 팰리스 A앞", offset: 34},
+        {name: "백제박물관", offset: 29},
+        {name: "올림픽유치원", offset: 25},
+        {name: "오륜초", offset: 24},
+        {name: "오륜중", offset: 23},
+        {name: "구름다리", offset: 22},
+        {name: "둔촌오륜역 (1번 출구)", offset: 20}
+      ],
+      "3": [
+        {name: "럭키아파트 (다이소 도곡점)", offset: 60},
+        {name: "도곡렉슬A (택시정류장)", offset: 56},
+        {name: "제일은행 (영양센터)", offset: 53},
+        {name: "일원터널", offset: 47},
+        {name: "일원역 (5번 출구)", offset: 43},
+        {name: "수서청소년수련관", offset: 42},
+        {name: "훼미리A (삼표에너지 훼미리주유소)", offset: 34},
+        {name: "개롱공원 (맥도날드 가락 DT점)", offset: 30},
+        {name: "개롱역 (4번출구)", offset: 28},
+        {name: "거여역 (다이소 거여점)", offset: 26},
+        {name: "세계로약국 (마천동사거리버스정류장)", offset: 24}
+      ],
+      "4": [
+        {name: "자곡사거리", offset: 56},
+        {name: "자곡동4단지", offset: 55},
+        {name: "꿈에그린A서문", offset: 49},
+        {name: "위례 (송파더센트레. 송파푸르지오 버스정류장)", offset: 47},
+        {name: "(송파레이크파크) 호반A (써밋 1차)", offset: 46},
+        {name: "문현중", offset: 40},
+        {name: "문정레미안", offset: 32}
+      ],
+      "5": [
+        {name: "우면우체국", offset: 65},
+        {name: "우리은행 ATM (개포로 230)", offset: 57},
+        {name: "구룡초 (건너편)", offset: 55},
+        {name: "신한은행 (개포동 건너편)", offset: 50},
+        {name: "개포동역 (5번출구)", offset: 45},
+        {name: "석탑상가 (건너편 버스정류장)", offset: 43},
+        {name: "가락중 (후문삼거리 버스정류장)", offset: 30},
+        {name: "예은유치원", offset: 28},
+        {name: "한양3차 (CU편의점)", offset: 25},
+        {name: "한전앞 (강동송파)", offset: 17}
+      ],
+      "6": [
+        {name: "반포리체A", offset: 60},
+        {name: "아크로비스타", offset: 58},
+        {name: "서초성당 (서초봄스피부과)", offset: 43},
+        {name: "진흥A (건너편)", offset: 41},
+        {name: "하나은행 (테헤란로)", offset: 36},
+        {name: "잠실새내역 (엘리베이터)", offset: 27},
+        {name: "향군타워 (버스정류장)", offset: 24},
+        {name: "잠실나루 (역사거리)", offset: 22},
+        {name: "구(잠실) 진주 (아파트) 상가 (횡단보도)", offset: 21},
+        {name: "파크리오 (건너편)", offset: 20}
+      ],
+      "7": [
+        {name: "방배신동아A (버스정류장)", offset: 60},
+        {name: "서초그랑자이 (김일중내과의원)", offset: 53},
+        {name: "양재 (강남베드로병원 건너편 공항버스정류장)", offset: 49},
+        {name: "숙명여고 (타워팰리스 공항버스정류장 제일은행)", offset: 46},
+        {name: "개포우성 (정문횡단보도)", offset: 45},
+        {name: "선경A (택시정류장 한스케이크)", offset: 44},
+        {name: "미도A (201동앞 버스정류장 초입)", offset: 42},
+        {name: "헬리오 (탄천교 지나 버스정류장 건널목)", offset: 33},
+        {name: "방이역 (1번 지나 KB국민은행앞 대로)", offset: 23}
+      ],
+      "8": [
+        {name: "개나리 (진선미부동산앞)", offset: 55},
+        {name: "도곡시장 (삼송빵집앞)", offset: 51},
+        {name: "한티역 (고용노동부 서울강남지청앞)", offset: 49},
+        {name: "은마후문 (새소망교회 앞)", offset: 46},
+        {name: "대치2동성당", offset: 44},
+        {name: "삼전우체국 (64김만두 앞)", offset: 37},
+        {name: "송파역 (4번출구 우리은행앞)", offset: 28},
+        {name: "대림A (가락동부센트레빌아파트 버스정류장)", offset: 25}
+      ],
+      "9": [
+        {name: "구반포 (세화여고 건너편 육교)", offset: 67},
+        {name: "잠원성당 (버스정류장)", offset: 55},
+        {name: "한신A (앞 횡단보도)", offset: 53},
+        {name: "구. 설악A (한신종합상가)", offset: 52},
+        {name: "미성A (신사중학교 건너편 공항버스정류장)", offset: 48},
+        {name: "신현대 (극동스포츠센터)", offset: 47},
+        {name: "구현대 (신한은행 압구정중앙)", offset: 45},
+        {name: "한양파출소 (건너편 횡단보도)", offset: 42},
+        {name: "압구정갤러리 (건너편 감마약국)", offset: 40},
+        {name: "청담국민은행", offset: 37},
+        {name: "봉은사역 (5번 출구)", offset: 31},
+        {name: "잠실엘스A (잠실지구대 건너편)", offset: 28},
+        {name: "풍납사거리 축협", offset: 20}
+      ]
+    };
+
+    const busSelect = document.getElementById('busSelect');
+    const stationSelect = document.getElementById('stationSelect');
+    const departureInput = document.getElementById('departure');
+    const calcBtn = document.getElementById('calcBtn');
+    const resultDiv = document.getElementById('result');
+
+    // 호 선택 시 해당 호의 정류장 목록을 업데이트하는 함수
+    busSelect.addEventListener('change', function () {
+      const selectedBus = busSelect.value;
+      stationSelect.innerHTML = ""; // 초기화
+
+      if (!selectedBus || !stationData[selectedBus]) {
+        stationSelect.innerHTML = "<option value=''>호를 먼저 선택하세요</option>";
+        return;
+      }
+
+      // 각 정류장마다 option 생성
+      stationData[selectedBus].forEach((station, index) => {
+        const option = document.createElement("option");
+        // value에는 offset 값을 함께 담을 수 있음 (이 예제에서는 offset만 사용)
+        option.value = station.offset;
+        option.textContent = station.name;
+        stationSelect.appendChild(option);
+      });
+    });
+
+    // 시간 계산 함수: "시:분" 형식 문자열을 받아 분 단위 총합을 반환
+    function parseTime(timeStr) {
+      const parts = timeStr.split(":");
+      if (parts.length !== 2) return null;
+      let hour = parseInt(parts[0], 10);
+      let minute = parseInt(parts[1], 10);
+      if (isNaN(hour) || isNaN(minute)) return null;
+      return {hour, minute};
+    }
+
+    // 도착 시간 계산
+    calcBtn.addEventListener('click', function () {
+      const departureStr = departureInput.value.trim();
+      const departureTime = parseTime(departureStr);
+      if (!departureTime) {
+        resultDiv.textContent = "출발 시간을 '시:분' 형식으로 정확히 입력해주세요.";
+        return;
+      }
+
+      const offset = parseInt(stationSelect.value, 10);
+      if (isNaN(offset)) {
+        resultDiv.textContent = "정류장을 선택해주세요.";
+        return;
+      }
+
+      // 출발 시간의 총 분 계산
+      let totalMinutes = departureTime.hour * 60 + departureTime.minute + offset;
+      // 시간과 분 계산 (12시간제 변환)
+      let arrivalHour = Math.floor(totalMinutes / 60);
+      let arrivalMinute = totalMinutes % 60;
+
+      // 12시간제로 표시 (0시는 12로)
+      arrivalHour = arrivalHour % 12;
+      arrivalHour = arrivalHour === 0 ? 12 : arrivalHour;
+
+      // 분이 한 자리이면 0을 붙임
+      let arrivalMinuteStr = arrivalMinute < 10 ? "0" + arrivalMinute : arrivalMinute;
+
+      resultDiv.textContent = `도착 예정 시간: ${arrivalHour}:${arrivalMinuteStr}`;
+    });
+  </script>
+</body>
+
+</html>
